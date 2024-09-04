@@ -1,95 +1,63 @@
-import sqlite3
-import pickle
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import pandas as pd
+"""
+This module sets up the FastAPI application for monitoring and predicting maritime and air traffic 
+slowdowns between Taiwan and China. It integrates real-time data from the Kpler API for maritime 
+traffic and the ADS-B Exchange API for air traffic over the Taiwan Strait. The application will 
+also provide predictions of future slowdowns based on the collected data.
+"""
 
-# Initialize the FastAPI application
+from fastapi import FastAPI, HTTPException
+import requests
+
+
 app = FastAPI()
 
-# Load the models from the pickle files
-with open("models/Scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
-with open("models/forest.pkl", "rb") as f:
-    forest = pickle.load(f)
-with open("models/SVCModel_pipeline.pkl", "rb") as f:
-    SVCModel_pipeline = pickle.load(f)
+# Kpler API integration
+KPLER_API_URL = "https://kpler-api-endpoint"  # Placeholder, replace with actual API URL
+KPLER_API_KEY = "your_kpler_api_key"
 
+# ADS-B Exchange API integration
+ADSB_API_URL = "https://adsbexchange-api-endpoint"  # Placeholder, replace with actual API URL
+ADSB_API_KEY = "your_adsb_api_key"
 
-class TitanicInput(BaseModel):
-    """Pydantic model for Titanic input data"""
-    Pclass: int
-    Sex: int
-    Age: float
-    SibSp: int
-    Parch: int
-    Fare: float
-    Embarked: int
-
-
-class HousingInput(BaseModel):
-    """Pydantic model for Housing input data"""
-    # Define the required fields for the housing model
-    feature_1: float
-    feature_2: float
-    # Add other features based on your dataset
-
-
-def execute_query(query: str):
+@app.get("/maritime_traffic")
+def get_maritime_traffic():
     """
-    Function to execute SQL queries.
-
-    :param query: SQL query to execute
-    :return: Dictionary with columns and data or error message
+    Fetch real-time maritime traffic data from Kpler API with a timeout
     """
     try:
-        conn = sqlite3.connect("/app/DSRA_projects.db")
-        cursor = conn.cursor()
-        cursor.execute(query)
-        columns = [description[0] for description in cursor.description]
-        data = cursor.fetchall()
-        conn.close()
-        return {"columns": columns, "data": data}
-    except sqlite3.Error as e:
-        return {"error": str(e)}
+        response = requests.get(
+            KPLER_API_URL, 
+            headers={"Authorization": f"Bearer {KPLER_API_KEY}"}, 
+            timeout=10  # Timeout set to 10 seconds
+        )
+        response.raise_for_status()  # Check for HTTP request errors
+        return response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail="Error fetching maritime traffic data") from e
 
 
-@app.post("/predict_titanic")
-def predict_titanic(data: TitanicInput):
+@app.get("/air_traffic")
+def get_air_traffic():
     """
-    Predict survival on Titanic based on the input data.
-
-    :param data: TitanicInput object containing features
-    :return: Dictionary with prediction result
+    Fetch real-time air traffic data from ADS-B Exchange API with a timeout
     """
-    df = pd.DataFrame([data.dict()])
-    prediction = SVCModel_pipeline.predict(df)[0]
-    return {"Survived": int(prediction)}
+    try:
+        response = requests.get(
+            ADSB_API_URL, 
+            headers={"Authorization": f"Bearer {ADSB_API_KEY}"}, 
+            timeout=10  # Timeout set to 10 seconds
+        )
+        response.raise_for_status()  # Check for HTTP request errors
+        return response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail="Error fetching air traffic data") from e
 
 
-@app.post("/predict_housing")
-def predict_housing(data: HousingInput):
+@app.get("/predict_traffic_slowdown")
+def predict_traffic_slowdown():
     """
-    Predict housing prices based on the input data.
-
-    :param data: HousingInput object containing features
-    :return: Dictionary with price prediction result
+    Predict future slowdowns based on current and historical data
+    This is a placeholder for the future machine learning model
     """
-    df = pd.DataFrame([data.dict()])
-    scaled_data = scaler.transform(df)
-    prediction = forest.predict(scaled_data)[0]
-    return {"price": float(prediction)}
-
-
-@app.post("/query")
-def query(query: str):
-    """
-    Execute an SQL query on the database.
-
-    :param query: SQL query string
-    :return: Query results or error message
-    """
-    result = execute_query(query)
-    if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    # This will be filled with the model prediction code later
+    return {"message": "Prediction endpoint placeholder"}
