@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: fastapi_container
+    ports:
+      - "8000:8000"  # Map port 8000 on the host to port 8000 in the container
+    volumes:
+      - ./Backend:/app  # Mount the backend code
+      - ./Database/DSRA_projects.db:/app/DSRA_projects.db  # Mount the database file
+    depends_on:
+      - database  # Ensure the database starts before the FastAPI app
+
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: sqlite_db
+    volumes:
+      - ./Database/DSRA_projects.db:/app/DSRA_projects.db  # Mount the SQLite database
+
+  streamlit:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: streamlit_app
+    ports:
+      - "8501:8501"  # Streamlit runs on port 8501 by default
+    volumes:
+      - ./Frontend:/app  # Mount the frontend code
+    depends_on:
+      - fastapi  # Ensure FastAPI starts before the Streamlit app
+    command: streamlit run predictor.py  # Run predictor.py in the streamlit service
