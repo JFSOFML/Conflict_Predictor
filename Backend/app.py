@@ -1,7 +1,7 @@
 """
-This module sets up the FastAPI application for monitoring and predicting maritime and air traffic 
-slowdowns between Taiwan and China. It integrates real-time data from the Kpler API for maritime 
-traffic and the ADS-B Exchange API for air traffic over the Taiwan Strait. The application will 
+This module sets up the FastAPI application for monitoring and predicting maritime and air traffic
+slowdowns between Taiwan and China. It integrates real-time data from the Kpler API for maritime
+traffic and the ADS-B Exchange API for air traffic over the Taiwan Strait. The application will
 also provide predictions of future slowdowns based on the collected data.
 """
 
@@ -26,8 +26,8 @@ def get_maritime_traffic():
     """
     try:
         response = requests.get(
-            KPLER_API_URL, 
-            headers={"Authorization": f"Bearer {KPLER_API_KEY}"}, 
+            KPLER_API_URL,
+            headers={"Authorization": f"Bearer {KPLER_API_KEY}"},
             timeout=10  # Timeout set to 10 seconds
         )
         response.raise_for_status()  # Check for HTTP request errors
@@ -43,8 +43,8 @@ def get_air_traffic():
     """
     try:
         response = requests.get(
-            ADSB_API_URL, 
-            headers={"Authorization": f"Bearer {ADSB_API_KEY}"}, 
+            ADSB_API_URL,
+            headers={"Authorization": f"Bearer {ADSB_API_KEY}"},
             timeout=10  # Timeout set to 10 seconds
         )
         response.raise_for_status()  # Check for HTTP request errors
